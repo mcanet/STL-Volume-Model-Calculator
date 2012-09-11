@@ -1,4 +1,4 @@
-STL-Volume-Model-Calculator
+STL Volume Model Calculator
 ===========================
 
 This code is a volume calculator for STL Model in Python.
