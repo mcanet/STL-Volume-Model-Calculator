@@ -65,7 +65,7 @@ def main(infilename):
             while True:
                 totalVolume +=read_triangle(f)
         except Exception, e:
-            continue
+            print "End calculate triangles volume"
         print len(normals), len(points), len(triangles), l, 
         print "Total volume:", (totalVolume/1000),"cm3"
     except Exception, e:
