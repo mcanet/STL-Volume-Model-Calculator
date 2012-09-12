@@ -53,11 +53,11 @@ class STLUtils:
 	def read_header(self):
 		self.f.seek(self.f.tell()+80)
 		
-	def inch3Transform(self, v):
-		return v
+	def cm3_To_inch3Transform(self, v):
+		return v*0.0610237441
 		
-	def calculateWeight(self,infilename, unit):
-		return 
+	def calculateWeight(self,volumeIn_cm):
+		return volumeIn_cm*1.04
 	
 	def calculateVolume(self,infilename, unit):
 		print infilename
@@ -67,7 +67,7 @@ class STLUtils:
 			self.f = open( infilename, "rb")
 			self.read_header()
 			l = self.read_length()
-			print "lenght:",l
+			print "total triangles:",l
 			try:
 				while True:
 					totalVolume +=self.read_triangle()
@@ -75,10 +75,12 @@ class STLUtils:
 				#print e
 				print "End calculate triangles volume"
 			#print len(self.normals), len(self.points), len(self.triangles), l, 
-			if unit=="cm3":
-				print "Total volume:", (totalVolume/1000),"cm"
+			if unit=="cm":
+				totalVolume = (totalVolume/1000)
+				print "Total volume:", totalVolume,"cm"
 			else:
-				print "Total volume:", (totalVolume/1000),"inch"
+				totalVolume = self.cm3_To_inch3Transform(totalVolume/1000)
+				print "Total volume:", totalVolume,"inch"
 		except Exception, e:
 			print e
 		return totalVolume
