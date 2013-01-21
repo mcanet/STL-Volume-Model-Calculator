@@ -2,7 +2,7 @@ STL Volume Model Calculator
 ===========================
 
 This code is a volume calculator for STL Model in Python.
-The script calculated how much material is need for 3D print a model. 
+The script calculates how much material is need for 3D print a model. 
 
 Usage in a terminal: 
   python mesure_volume.py torus.stl
