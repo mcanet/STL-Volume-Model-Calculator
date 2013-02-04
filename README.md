@@ -11,7 +11,7 @@ Usage in a terminal:
 
 Please report any error you may find to me (mar.canet@gmail.com).
 
-Author: Mar Canet - Twitter: mcanet
+Author: Mar Canet(http://mcanet.info) - Twitter: mcanet
 
 Licenced under:
 ===========================
