@@ -66,8 +66,8 @@ class STLUtils:
         return v*0.0610237441
         
     def calculateMassCM3(self,totalVolume):
-    	totalMass = 0
-    	if material in {'1','ABS'}:
+        totalMass = 0
+        if material in {'1','ABS'}:
             totalMass = (totalVolume*1.04)
         elif material in {'2','PLA'}:
             totalMass = (totalVolume*1.25)
@@ -98,9 +98,9 @@ class STLUtils:
             totalMass = self.calculateMassCM3(totalVolume)
 
             if totalMass == 0:
-            	print('Total mass could not be calculated')
+                print('Total mass could not be calculated')
             else:
-            	print('Total mass:', totalMass,'g')
+                print('Total mass:', totalMass,'g')
 
             if unit=="cm":
                 print("Total volume:", totalVolume,"cm^3")    
