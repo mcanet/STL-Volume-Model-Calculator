@@ -69,41 +69,41 @@ class STLUtils:
 
     def calculateMassCM3(self, totalVolume):
         totalMass = 0
-        if material in {'1', 'ABS'}:
+        if material in {1, 'ABS'}:
             totalMass = (totalVolume * 1.04)
-        elif material in {'2', 'PLA'}:
+        elif material in {2, 'PLA'}:
             totalMass = (totalVolume * 1.25)
-        elif material in {'3', 'CFRP'}:
+        elif material in {3, 'CFRP'}:
             totalMass = (totalVolume * 1.79)
-        elif material in {'4', 'Plexiglass'}:
+        elif material in {4, 'Plexiglass'}:
             totalMass = (totalVolume * 1.18)
-        elif material in {'5', 'Alumide'}:
+        elif material in {5, 'Alumide'}:
             totalMass = (totalVolume * 1.36)
-        elif material in {'6', 'Aluminum'}:
+        elif material in {6, 'Aluminum'}:
             totalMass = (totalVolume * 2.68)
-        elif material in {'7', 'Brass'}:
+        elif material in {7, 'Brass'}:
             totalMass = (totalVolume * 8.6)
-        elif material in {'8', 'Bronze'}:
+        elif material in {8, 'Bronze'}:
             totalMass = (totalVolume * 9.0)
-        elif material in {'9', 'Copper'}:
+        elif material in {9, 'Copper'}:
             totalMass = (totalVolume * 9.0)
-        elif material in {'10', 'Gold_14K'}:
+        elif material in {10, 'Gold_14K'}:
             totalMass = (totalVolume * 13.6)
-        elif material in {'11', 'Gold_18K'}:
+        elif material in {11, 'Gold_18K'}:
             totalMass = (totalVolume * 15.6)
-        elif material in {'12', 'Polyamide_MJF'}:
+        elif material in {12, 'Polyamide_MJF'}:
             totalMass = (totalVolume * 1.01)
-        elif material in {'13', 'Polyamide_SLS'}:
+        elif material in {13, 'Polyamide_SLS'}:
             totalMass = (totalVolume * 0.95)
-        elif material in {'14', 'Rubber'}:
+        elif material in {14, 'Rubber'}:
             totalMass = (totalVolume * 1.2)
-        elif material in {'15', 'Silver'}:
+        elif material in {15, 'Silver'}:
             totalMass = (totalVolume * 10.26)
-        elif material in {'15', 'Steel'}:
+        elif material in {16, 'Steel'}:
             totalMass = (totalVolume * 7.86)
-        elif material in {'15', 'Titanium'}:
+        elif material in {17, 'Titanium'}:
             totalMass = (totalVolume * 4.41)
-        elif material in {'15', 'Resin'}:
+        elif material in {18, 'Resin'}:
             totalMass = (totalVolume * 1.2)
         return totalMass
 
