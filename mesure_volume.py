@@ -125,16 +125,16 @@ class STLUtils:
             totalVolume = (totalVolume / 1000)
             totalMass = self.calculateMassCM3(totalVolume)
 
-            if totalMass == 0:
+            if totalMass <= 0:
                 print('Total mass could not be calculated')
             else:
                 print('Total mass:', totalMass, 'g')
 
-            if unit == "cm":
-                print("Total volume:", totalVolume, "cm^3")
-            else:
-                totalVolume = self.cm3_To_inch3Transform(totalVolume)
-                print("Total volume:", totalVolume, "inch^3")
+                if unit == "cm":
+                    print("Total volume:", totalVolume, "cm^3")
+                else:
+                    totalVolume = self.cm3_To_inch3Transform(totalVolume)
+                    print("Total volume:", totalVolume, "inch^3")
         except Exception as e:
             print(e)
         return totalVolume
