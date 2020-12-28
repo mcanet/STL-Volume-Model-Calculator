@@ -15,11 +15,3 @@ Author: Mar Canet(http://var-mar.info) - Twitter: mcanet
 
 If someone is looking for some explanation about volume calculator i recommend read this blog post: http://n-e-r-v-o-u-s.com/blog/?p=4415
 
-Licenced under:
-===========================
-This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License(http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US).
-For commercial licence of this software or extra implementations or integrations or customization, feel free to contact me. 
-
-
-
-
