@@ -12,7 +12,26 @@ import struct
 import sys
 
 print('Choose desired print material of STL file below:')
-material = input('1 = ABS or 2 = PLA or 3 = 3k CFRP or 4 = Plexiglass : ')
+print('1 = ABS')
+print('2 = PLA')
+print('3 = 3k CFRP')
+print('4 = Plexiglass')
+print('5 = Alumide')
+print('6 = Aluminum')
+print('7 = Brass')
+print('8 = Bronze')
+print('9 = Copper')
+print('10 = Gold_14K')
+print('11 = Gold_18K')
+print('12 = Polyamide_MJF')
+print('13 = Polyamide_SLS')
+print('14 = Rubber')
+print('15 = Silver')
+print('16 = Steel')
+print('17 = Titanium')
+print('18 = Resin')
+
+material = input('Enter the number corresponding to the desired print material: ')
 
 # Validate material input
 try:
