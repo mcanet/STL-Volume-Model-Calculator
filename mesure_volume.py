@@ -14,6 +14,14 @@ import sys
 print('Choose desired print material of STL file below:')
 material = input('1 = ABS or 2 = PLA or 3 = 3k CFRP or 4 = Plexiglass : ')
 
+# Validate material input
+try:
+    material = int(material)
+    if material < 1 or material > 18:
+        material = 1
+except ValueError:
+    material = 1
+
 materials = {
     1: {'name': 'ABS', 'mass': 1.04},
     2: {'name': 'PLA', 'mass': 1.25},
