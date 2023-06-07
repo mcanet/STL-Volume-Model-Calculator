@@ -1,7 +1,7 @@
 STL Volume Model Calculator
 ===========================
 
-This code is a volume calculator for STL Model in Python.
+This code is a volume calculator and weight with an extensive list of materials(ABS, PLA, 3k CFRP, Plexiglass, Alumide, Aluminum, Brass, Bronze, Copper, Gold_14K, Gold_18K, Polyamide_MJF, Polyamide_SLS, Rubber, Silver, Steel, Titanium, Resin) for STL Model in Python.
 The script calculates how much material is needed for printing a 3D models. 
 
 Usage in a terminal: 
