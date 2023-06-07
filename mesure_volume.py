@@ -2,19 +2,38 @@
 '''
 VOLUME CALCULATION STL binary MODELS
 Author: Mar Canet (mar.canet@gmail.com) - september 2012
-Description: useful to calculate cost in a 3D printing ABS or PLA usage
-
-Modified by:
-Author: Saijin_Naib (Synper311@aol.com)
-Date: 2016-06-26 03:55:13.879187
 Description: Added input call for print material (ABS or PLA), added print of object mass, made Python3 compatible, changed tabs for spaces
-Material Mass Source: https://www.toybuilderlabs.com/blogs/news/13053117-filament-volume-and-length
+Notes: Material Mass Source is https://www.toybuilderlabs.com/blogs/news/13053117-filament-volume-and-length
+
+Contributors: Saijin_Naib (Synper311@aol.com)
 '''
 
 import struct
 import sys
+
 print('Choose desired print material of STL file below:')
 material = input('1 = ABS or 2 = PLA or 3 = 3k CFRP or 4 = Plexiglass : ')
+
+materials = {
+    1: {'name': 'ABS', 'mass': 1.04},
+    2: {'name': 'PLA', 'mass': 1.25},
+    3: {'name': '3k CFRP', 'mass': 1.79},
+    4: {'name': 'Plexiglass', 'mass': 1.18},
+    5: {'name': 'Alumide', 'mass': 1.36},
+    6: {'name': 'Aluminum', 'mass': 2.68},
+    7: {'name': 'Brass', 'mass': 8.6},
+    8: {'name': 'Bronze', 'mass': 9.0},
+    9: {'name': 'Copper', 'mass': 9.0},
+    10: {'name': 'Gold_14K', 'mass': 13.6},
+    11: {'name': 'Gold_18K', 'mass': 15.6},
+    12: {'name': 'Polyamide_MJF', 'mass': 1.01},
+    13: {'name': 'Polyamide_SLS', 'mass': 0.95},
+    14: {'name': 'Rubber', 'mass': 1.2},
+    15: {'name': 'Silver', 'mass': 10.26},
+    16: {'name': 'Steel', 'mass': 7.86},
+    17: {'name': 'Titanium', 'mass': 4.41},
+    18: {'name': 'Resin', 'mass': 1.2}
+}
 
 
 class STLUtils:
@@ -68,44 +87,10 @@ class STLUtils:
         return v * 0.0610237441
 
     def calculateMassCM3(self, totalVolume):
-        totalMass = 0
-        if material in {1, 'ABS'}:
-            totalMass = (totalVolume * 1.04)
-        elif material in {2, 'PLA'}:
-            totalMass = (totalVolume * 1.25)
-        elif material in {3, 'CFRP'}:
-            totalMass = (totalVolume * 1.79)
-        elif material in {4, 'Plexiglass'}:
-            totalMass = (totalVolume * 1.18)
-        elif material in {5, 'Alumide'}:
-            totalMass = (totalVolume * 1.36)
-        elif material in {6, 'Aluminum'}:
-            totalMass = (totalVolume * 2.68)
-        elif material in {7, 'Brass'}:
-            totalMass = (totalVolume * 8.6)
-        elif material in {8, 'Bronze'}:
-            totalMass = (totalVolume * 9.0)
-        elif material in {9, 'Copper'}:
-            totalMass = (totalVolume * 9.0)
-        elif material in {10, 'Gold_14K'}:
-            totalMass = (totalVolume * 13.6)
-        elif material in {11, 'Gold_18K'}:
-            totalMass = (totalVolume * 15.6)
-        elif material in {12, 'Polyamide_MJF'}:
-            totalMass = (totalVolume * 1.01)
-        elif material in {13, 'Polyamide_SLS'}:
-            totalMass = (totalVolume * 0.95)
-        elif material in {14, 'Rubber'}:
-            totalMass = (totalVolume * 1.2)
-        elif material in {15, 'Silver'}:
-            totalMass = (totalVolume * 10.26)
-        elif material in {16, 'Steel'}:
-            totalMass = (totalVolume * 7.86)
-        elif material in {17, 'Titanium'}:
-            totalMass = (totalVolume * 4.41)
-        elif material in {18, 'Resin'}:
-            totalMass = (totalVolume * 1.2)
-        return totalMass
+        if material in materials:
+            material_mass = materials[material]['mass']
+            return totalVolume * material_mass
+        return 0
 
     def calculateVolume(self, infilename, unit):
         print(infilename)
@@ -122,7 +107,7 @@ class STLUtils:
                     totalVolume += self.read_triangle()
             except Exception as e:
                 print("End calculate triangles volume")
-            totalVolume = (totalVolume / 1000)
+            totalVolume = totalVolume / 1000
             totalMass = self.calculateMassCM3(totalVolume)
 
             if totalMass <= 0:
