@@ -7,8 +7,9 @@ The script calculates the volume of the 3D model and estimates the amount of mat
 The extensive list of materials includes: ABS, PLA, 3k CFRP, Plexiglass, Alumide, Aluminum, Brass, Bronze, Copper, Gold_14K, Gold_18K, Polyamide_MJF, Polyamide_SLS, Rubber, Silver, Steel, Titanium, and Resin.
 
 Usage in a terminal: 
+```
   python volume_calculator.py torus.stl
-
+```
 "torus.stl" is any STL binary model of the object you want to calculate the volume.
 
 Please report any error you may find to me (mar.canet@gmail.com).
