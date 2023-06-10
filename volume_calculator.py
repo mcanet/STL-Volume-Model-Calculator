@@ -147,6 +147,18 @@ class STLUtils:
                 else:
                     totalVolume = self.cm3_To_inch3Transform(totalVolume)
                     print("Total volume:", totalVolume, "inch^3")
+                    
+                # Calculate dimensions
+                min_x = min(p[0] for p in self.points)
+                max_x = max(p[0] for p in self.points)
+                min_y = min(p[1] for p in self.points)
+                max_y = max(p[1] for p in self.points)
+                min_z = min(p[2] for p in self.points)
+                max_z = max(p[2] for p in self.points)
+            
+                dimensions = (max_x - min_x, max_y - min_y, max_z - min_z)
+                print("Dimensions (x, y, z):", dimensions , " in ", unit )
+                
         except Exception as e:
             print(e)
         return totalVolume
