@@ -1,47 +1,16 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
+
 '''
 VOLUME CALCULATION STL binary MODELS
-Author: Mar Canet (mar.canet@gmail.com) - september 2012
-Description: Added input call for print material (ABS or PLA), added print of object mass, made Python3 compatible, changed tabs for spaces
-Notes: Material Mass Source is https://www.toybuilderlabs.com/blogs/news/13053117-filament-volume-and-length
-
+Author: Mar Canet (mar.canet@gmail.com) - September 2012
+Description: Calculate volume and mass of STL binary models.
 Contributors: Saijin_Naib (Synper311@aol.com)
 '''
 
 import struct
 import sys
 
-print('Choose desired print material of STL file below:')
-print('1 = ABS')
-print('2 = PLA')
-print('3 = 3k CFRP')
-print('4 = Plexiglass')
-print('5 = Alumide')
-print('6 = Aluminum')
-print('7 = Brass')
-print('8 = Bronze')
-print('9 = Copper')
-print('10 = Gold_14K')
-print('11 = Gold_18K')
-print('12 = Polyamide_MJF')
-print('13 = Polyamide_SLS')
-print('14 = Rubber')
-print('15 = Silver')
-print('16 = Steel')
-print('17 = Titanium')
-print('18 = Resin')
-
-material = input('Enter the number corresponding to the desired print material: ')
-
-# Validate material input
-try:
-    material = int(material)
-    if material < 1 or material > 18:
-        material = 1
-except ValueError:
-    material = 1
-
-materials = {
+MATERIALS = {
     1: {'name': 'ABS', 'mass': 1.04},
     2: {'name': 'PLA', 'mass': 1.25},
     3: {'name': '3k CFRP', 'mass': 1.79},
@@ -62,17 +31,23 @@ materials = {
     18: {'name': 'Resin', 'mass': 1.2}
 }
 
+def get_material_choice():
+    while True:
+        for key, value in MATERIALS.items():
+            print(f"{key} = {value['name']}")
+        try:
+            choice = int(input('Enter the number corresponding to the desired print material: '))
+            if 1 <= choice <= 18:
+                return choice
+            else:
+                print("Invalid choice. Please choose a number between 1 and 18.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
 class STLUtils:
-    def resetVariables(self):
-        self.normals = []
-        self.points = []
-        self.triangles = []
-        self.bytecount = []
-        self.fb = []  # debug list
+    def __init__(self):
+        self.f = None
 
-    # Calculate volume for the 3D mesh using Tetrahedron volume
-    # based on: http://stackoverflow.com/questions/1406029/how-to-calculate-the-volume-of-a-3d-mesh-object-the-surface-of-which-is-made-up
     def signedVolumeOfTriangle(self, p1, p2, p3):
         v321 = p3[0] * p2[1] * p1[2]
         v231 = p2[0] * p3[1] * p1[2]
@@ -84,7 +59,6 @@ class STLUtils:
 
     def unpack(self, sig, l):
         s = self.f.read(l)
-        self.fb.append(s)
         return struct.unpack(sig, s)
 
     def read_triangle(self):
@@ -92,15 +66,7 @@ class STLUtils:
         p1 = self.unpack("<3f", 12)
         p2 = self.unpack("<3f", 12)
         p3 = self.unpack("<3f", 12)
-        b = self.unpack("<h", 2)
-
-        self.normals.append(n)
-        l = len(self.points)
-        self.points.append(p1)
-        self.points.append(p2)
-        self.points.append(p3)
-        self.triangles.append((l, l + 1, l + 2))
-        self.bytecount.append(b[0])
+        self.unpack("<h", 2)
         return self.signedVolumeOfTriangle(p1, p2, p3)
 
     def read_length(self):
@@ -114,26 +80,21 @@ class STLUtils:
         return v * 0.0610237441
 
     def calculateMassCM3(self, totalVolume):
-        if material in materials:
-            material_mass = materials[material]['mass']
+        if material in MATERIALS:
+            material_mass = MATERIALS[material]['mass']
             return totalVolume * material_mass
         return 0
 
     def calculateVolume(self, infilename, unit):
         print(infilename)
-        self.resetVariables()
         totalVolume = 0
-        totalMass = 0
         try:
             self.f = open(infilename, "rb")
             self.read_header()
             l = self.read_length()
             print("total triangles:", l)
-            try:
-                while True:
-                    totalVolume += self.read_triangle()
-            except Exception as e:
-                print("End calculate triangles volume")
+            for _ in range(l):
+                totalVolume += self.read_triangle()
             totalVolume = totalVolume / 1000
             totalMass = self.calculateMassCM3(totalVolume)
 
@@ -148,16 +109,19 @@ class STLUtils:
                     totalVolume = self.cm3_To_inch3Transform(totalVolume)
                     print("Total volume:", totalVolume, "inch^3")
         except Exception as e:
-            print(e)
-        return totalVolume
+            print(f"Error: {e}")
 
+def main():
+    if len(sys.argv) == 1:
+        print("Define model to calculate volume, e.g.: python measure_volume.py torus.stl")
+        return
+
+    global material
+    material = get_material_choice()
+
+    mySTLUtils = STLUtils()
+    unit = "inch" if len(sys.argv) > 2 and sys.argv[2] == "inch" else "cm"
+    mySTLUtils.calculateVolume(sys.argv[1], unit)
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print("Define model to calculate volume ej: python measure_volume.py torus.stl")
-    else:
-        mySTLUtils = STLUtils()
-        if(len(sys.argv) > 2 and sys.argv[2] == "inch"):
-            mySTLUtils.calculateVolume(sys.argv[1], "inch")
-        else:
-            mySTLUtils.calculateVolume(sys.argv[1], "cm")
+    main()
