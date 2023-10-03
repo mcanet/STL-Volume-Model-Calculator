@@ -38,21 +38,11 @@ class 3DPrintingMaterials:
         for key, value in self.materials_dict.items():
             print(f"{key} = {value['name']}")
 
-    def get_material_choice(self):
-        while True:
-            self.list_materials()
-            try:
-                choice = int(input('Enter the number corresponding to the desired print material: '))
-                if 1 <= choice <= len(self.materials_dict):
-                    return choice
-                else:
-                    print(f"Invalid choice. Please choose a number between 1 and {len(self.materials_dict)}.")
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-
 class STLUtils:
     def __init__(self):
         self.f = None
+        self.is_binary_file = None
+        self.triangles = []
 
     def is_binary(self, file):
         with open(file, 'rb') as f:
@@ -84,7 +74,7 @@ class STLUtils:
         p2 = self.unpack("<3f", 12)
         p3 = self.unpack("<3f", 12)
         self.unpack("<h", 2)
-        return self.signedVolumeOfTriangle(p1, p2, p3)
+        return (p1, p2, p3)
 
     def read_length(self):
         length = struct.unpack("@i", self.f.read(4))
@@ -96,67 +86,54 @@ class STLUtils:
     def cm3_To_inch3Transform(self, v):
         return v * 0.0610237441
 
-    def calculateMassCM3(self, totalVolume):
-        if material in MATERIALS:
-            material_mass = MATERIALS[material]['mass']
-            return totalVolume * material_mass
-        return 0
-
-    def calculateVolume(self, infilename, unit):
-        print(infilename)
-        totalVolume = 0
+    def loadSTL(self, infilename):
+        self.is_binary_file = self.is_binary(infilename)
+        self.triangles = []
         try:
-            is_binary = self.is_binary(infilename)
-            if is_binary:
+            if self.is_binary_file:
                 self.f = open(infilename, "rb")
                 self.read_header()
                 l = self.read_length()
                 print("total triangles:", l)
                 for _ in range(l):
-                    totalVolume += self.read_triangle()
+                    self.triangles.append(self.read_triangle())
             else:
                 with open(infilename, 'r') as f:
                     lines = f.readlines()
                 i = 0
                 while i < len(lines):
                     if lines[i].strip().startswith('facet'):
-                        totalVolume += self.read_ascii_triangle(lines, i)
+                        self.triangles.append(self.read_ascii_triangle(lines, i))
                         i += 7  # Skip to next facet
                     else:
                         i += 1
-            totalVolume = totalVolume / 1000
-            totalMass = self.calculateMassCM3(totalVolume)
-
-            if totalMass <= 0:
-                print('Total mass could not be calculated')
-            else:
-                print('Total mass:', totalMass, 'g')
-
-                if unit == "cm":
-                    print("Total volume:", totalVolume, "cm^3")
-                else:
-                    totalVolume = self.cm3_To_inch3Transform(totalVolume)
-                    print("Total volume:", totalVolume, "inch^3")
         except Exception as e:
             print(f"Error: {e}")
+            self.triangles = []
 
-    # surf_area method outputs the surface area in square centimeters (cm^2)
-    def surf_area(self, vertices):
+    def calculateVolume(self, unit, material_mass):
+        totalVolume = sum(self.signedVolumeOfTriangle(p1, p2, p3) for p1, p2, p3 in self.triangles) / 1000
+        totalMass = totalVolume * material_mass
+
+        if totalMass <= 0:
+            print('Total mass could not be calculated')
+        else:
+            print('Total mass:', totalMass, 'g')
+
+            if unit == "cm":
+                print("Total volume:", totalVolume, "cm^3")
+            else:
+                totalVolume = self.cm3_To_inch3Transform(totalVolume)
+                print("Total volume:", totalVolume, "inch^3")
+
+    def surf_area(self):
         area = 0
-        size = len(vertices)
-        for i in range(size):
-            if (i + 1) % 9 == 0:
-                ax = vertices[i - 5] - vertices[i - 2]
-                ay = vertices[i - 4] - vertices[i - 1]
-                az = vertices[i - 3] - vertices[i]
-                bx = vertices[i - 8] - vertices[i - 2]
-                by = vertices[i - 7] - vertices[i - 1]
-                bz = vertices[i - 6] - vertices[i]
-                cx = ay * bz - az * by
-                cy = az * bx - ax * bz
-                cz = ax * by - ay * bx
-                area += 0.5 * (cx * cx + cy * cy + cz * cz)**0.5
-        areaCm2 = area / 100        
+        for p1, p2, p3 in self.triangles:
+            ax, ay, az = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
+            bx, by, bz = p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]
+            cx, cy, cz = ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
+            area += 0.5 * (cx * cx + cy * cy + cz * cz)**0.5
+        areaCm2 = area / 100
         print("Total area:", areaCm2, "cm^2")
         return areaCm2
 
@@ -165,25 +142,20 @@ def main():
     parser.add_argument('filename', help='Path to the STL file')
     parser.add_argument('calculation', choices=['volume', 'area'], help='Choose between calculating volume or surface area')
     parser.add_argument('--unit', choices=['cm', 'inch'], default='cm', help='Unit for the volume calculation (default: cm)')
+    parser.add_argument('--material', type=int, choices=range(1, 19), help='Material ID for mass calculation')
 
     args = parser.parse_args()
 
-    if not args.filename:
-        print("Please provide a filename, e.g.: python measure_volume.py torus.stl")
-        return
-
     mat = 3DPrintingMaterials()
-    global material
-    material = mat.get_material_choice()
+    material_mass = mat.get_material_mass(args.material)
 
     mySTLUtils = STLUtils()
+    mySTLUtils.loadSTL(args.filename)
 
     if args.calculation == 'volume':
-        mySTLUtils.calculateVolume(args.filename, args.unit)
+        mySTLUtils.calculateVolume(args.unit, material_mass)
     elif args.calculation == 'area':
-        # Assuming you have a method to calculate surface area similar to calculateVolume
-        # and it's named calculateArea, you can call it like below:
-        mySTLUtils.calculateArea(args.filename, args.unit)
+        mySTLUtils.surf_area()
 
 if __name__ == '__main__':
     main()
