@@ -1,18 +1,3 @@
-STL Volume Model Calculator
-===========================
-
-This code is a volume calculator and weight estimator for 3D models in the STL file format, implemented in Python.
-The script calculates the volume of the 3D model and estimates the amount of material required for printing.
-
-The extensive list of materials includes: ABS, PLA, 3k CFRP, Plexiglass, Alumide, Aluminum, Brass, Bronze, Copper, Gold_14K, Gold_18K, Polyamide_MJF, Polyamide_SLS, Rubber, Silver, Steel, Titanium, and Resin.
-
-Usage in a terminal: 
-```
-  python volume_calculator.py torus.stl
-```
-"torus.stl" is any STL binary model of the object you want to calculate the volume.
-
----
 # STL Volume Model Calculator
 
 This script provides functionality to calculate the volume and surface area of 3D models stored in the STL file format, as well as estimate the weight of the model based on the selected material. It is implemented in Python and supports both binary and ASCII STL files.
