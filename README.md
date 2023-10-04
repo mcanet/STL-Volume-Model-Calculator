@@ -17,28 +17,6 @@ Usage in a terminal:
 
 This script provides functionality to calculate the volume and surface area of 3D models stored in the STL file format, as well as estimate the weight of the model based on the selected material. It is implemented in Python and supports both binary and ASCII STL files.
 
-## Materials Supported
-
-The script comes with an extensive list of 3D printable materials each with its specified density which is used to calculate the mass of the model. The materials included are:
-- ABS
-- PLA
-- 3k CFRP
-- Plexiglass
-- Alumide
-- Aluminum
-- Brass
-- Bronze
-- Copper
-- Gold_14K
-- Gold_18K
-- Polyamide_MJF
-- Polyamide_SLS
-- Rubber
-- Silver
-- Steel
-- Titanium
-- Resin
-
 ## Usage
 
 To use the script, navigate to the directory containing `volume_calculator.py` and your STL file in a terminal, then execute one of the following commands based on your needs:
@@ -71,6 +49,27 @@ Calculate the surface area of torus.stl:
 ```bash
 python volume_calculator.py torus.stl area
 ```
+## Materials Supported
+
+The script comes with an extensive list of 3D printable materials each with its specified density which is used to calculate the mass of the model. The materials included are:
+- ABS
+- PLA
+- 3k CFRP
+- Plexiglass
+- Alumide
+- Aluminum
+- Brass
+- Bronze
+- Copper
+- Gold_14K
+- Gold_18K
+- Polyamide_MJF
+- Polyamide_SLS
+- Rubber
+- Silver
+- Steel
+- Titanium
+- Resin
 
 ## Reporting Issues
 Please report any error you may find to me (mar.canet@gmail.com).
