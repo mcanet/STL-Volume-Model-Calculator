@@ -33,6 +33,19 @@ class 3DPrintingMaterials:
             17: {'name': 'Titanium', 'mass': 4.41},
             18: {'name': 'Resin', 'mass': 1.2}
         }
+        
+    def get_material_mass(self, material_identifier):
+        if material_identifier is None:
+            return 1  # Default mass (density) value if no material is specified
+        elif isinstance(material_identifier, int) and material_identifier in self.materials_dict:
+            return self.materials_dict[material_identifier]['mass']
+        elif isinstance(material_identifier, str):
+            for key, value in self.materials_dict.items():
+                if value['name'].lower() == material_identifier.lower():
+                    return value['mass']
+            raise ValueError(f"Invalid material name: {material_identifier}")
+        else:
+            raise ValueError(f"Invalid material identifier: {material_identifier}")
 
     def list_materials(self):
         for key, value in self.materials_dict.items():
