@@ -62,6 +62,8 @@ Please report any error you may find to me (mar.canet@gmail.com).
 ## Author
 Mar Canet(http://var-mar.info) - Twitter: mcanet
 
+If you want to make a donation you can do in our PayPal account: varvarag@gmail.com
+
 ## Additional Resources
 
 If someone is looking for some explanation about volume calculator i recommend read this blog post: http://n-e-r-v-o-u-s.com/blog/?p=4415
