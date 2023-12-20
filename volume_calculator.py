@@ -11,7 +11,7 @@ import sys
 import re
 import argparse
 
-class 3DPrintingMaterials:
+class materialsFor3DPrinting:
     def __init__(self):
         self.materials_dict = {
             1: {'name': 'ABS', 'mass': 1.04},
@@ -159,7 +159,7 @@ def main():
 
     args = parser.parse_args()
 
-    mat = 3DPrintingMaterials()
+    mat = materialsFor3DPrinting()
     material_mass = mat.get_material_mass(args.material)
 
     mySTLUtils = STLUtils()
