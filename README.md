@@ -60,7 +60,7 @@ The script comes with an extensive list of 3D printable materials each with its 
 Please report any error you may find to me (mar.canet@gmail.com).
 
 ## Author
-Mar Canet(http://var-mar.info) - Twitter: mcanet
+Mar Canet Sola(http://var-mar.info) - Twitter: mcanet
 
 If you want to make a donation you can do in our PayPal account: varvarag@gmail.com
 
