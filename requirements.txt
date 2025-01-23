@@ -1,0 +1,5 @@
+numpy>=1.19
+numpy-stl>=2.0
+nibabel>=3.0
+pydicom>=2.0
+scikit-image>=0.19
