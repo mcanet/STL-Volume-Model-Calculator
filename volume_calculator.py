@@ -14,12 +14,12 @@ import argparse
 class materialsFor3DPrinting:
     def __init__(self):
         self.materials_dict = {
-            1: {'name': 'ABS', 'mass': 1.04},
+            1: {'name': 'ABS', 'mass': 1.02},
             2: {'name': 'PLA', 'mass': 1.25},
             3: {'name': '3k CFRP', 'mass': 1.79},
             4: {'name': 'Plexiglass', 'mass': 1.18},
             5: {'name': 'Alumide', 'mass': 1.36},
-            6: {'name': 'Aluminum', 'mass': 2.68},
+            6: {'name': 'Aluminum', 'mass': 2.698},
             7: {'name': 'Brass', 'mass': 8.6},
             8: {'name': 'Bronze', 'mass': 9.0},
             9: {'name': 'Copper', 'mass': 9.0},
@@ -31,7 +31,9 @@ class materialsFor3DPrinting:
             15: {'name': 'Silver', 'mass': 10.26},
             16: {'name': 'Steel', 'mass': 7.86},
             17: {'name': 'Titanium', 'mass': 4.41},
-            18: {'name': 'Resin', 'mass': 1.2}
+            18: {'name': 'Resin', 'mass': 1.2},
+            19: {'name': 'Carbon Steel', 'mass': 7.800},
+            20: {'name': 'Red Oak', 'mass': 5.700}
         }
         
     def get_material_mass(self, material_identifier):
@@ -241,7 +243,7 @@ def main():
     parser.add_argument('filename', help='Path to the file')
     parser.add_argument('calculation', choices=['volume', 'area'], help='Choose between calculating volume or surface area')
     parser.add_argument('--unit', choices=['cm', 'inch'], default='cm', help='Unit for the volume calculation (default: cm)')
-    parser.add_argument('--material', type=int, choices=range(1, 19),default=2, help='Material ID for mass calculation')
+    parser.add_argument('--material', type=int, choices=range(1, 21),default=2, help='Material ID for mass calculation')
     parser.add_argument('--filetype', choices=['stl', 'nii', 'dcm'], default='stl', help='Type of the input file: stl, nii, dcm')
 
     args = parser.parse_args()
