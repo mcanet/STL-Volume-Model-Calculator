@@ -55,6 +55,8 @@ The script comes with an extensive list of 3D printable materials each with its 
 - Steel
 - Titanium
 - Resin
+- Carbon Steel
+- Red Oak
 
 ## Reporting Issues
 Please report any error you may find to me (mar.canet@gmail.com).
