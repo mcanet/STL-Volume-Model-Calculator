@@ -2,6 +2,13 @@
 
 This script provides functionality to calculate the volume and surface area of 3D models stored in the STL file format, as well as estimate the weight of the model based on the selected material. It is implemented in Python and supports both binary and ASCII STL files.
 
+## Installation
+
+Make sure you have [Python 3](https://www.python.org/) installed. Then clone the repository and install the required Python libraries using:
+
+```bash
+pip install -r requirements.txt
+```
 ## Usage
 
 To use the script, navigate to the directory containing `volume_calculator.py` and your STL file in a terminal, then execute one of the following commands based on your needs:
