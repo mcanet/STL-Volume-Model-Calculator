@@ -10,6 +10,7 @@ import struct
 import sys
 import re
 import argparse
+from tqdm import tqdm  # Add the tqdm library
 
 class materialsFor3DPrinting:
     def __init__(self):
@@ -110,7 +111,7 @@ class STLUtils:
                 self.read_header()
                 l = self.read_length()
                 print("total triangles:", l)
-                for _ in range(l):
+                for _ in tqdm(range(l), desc="Reading triangles"):
                     self.triangles.append(self.read_triangle())
             else:
                 with open(infilename, 'r') as f:
@@ -127,7 +128,10 @@ class STLUtils:
             self.triangles = []
 
     def calculateVolume(self, unit, material_mass):
-        totalVolume = sum(self.signedVolumeOfTriangle(p1, p2, p3) for p1, p2, p3 in self.triangles) / 1000
+        totalVolume = 0
+        for p1, p2, p3 in tqdm(self.triangles, desc="Calculating volume"):
+            totalVolume += self.signedVolumeOfTriangle(p1, p2, p3)
+        totalVolume /= 1000
         totalMass = totalVolume * material_mass
 
         if totalMass <= 0:
