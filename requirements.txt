@@ -3,3 +3,4 @@ numpy-stl>=2.0
 nibabel>=3.0
 pydicom>=2.0
 scikit-image>=0.19
+tqdm>=4.0
