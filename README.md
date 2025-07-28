@@ -5,6 +5,7 @@ A easy-to-use command-line tool to calculate the volume, surface area, bounding 
 ## Key Features
 
 -   **Comprehensive Analysis by Default**: Run it with just a filename to get file size, triangle count, bounding box, surface area, and volume.
+-   **Dual Infill Mass Comparison**: Automatically calculates and compares the model's mass at a specified infill percentage (defaulting to 20%) against a 100% solid version.
 -   **Full Mass Estimation**: Automatically calculates the estimated mass for over 20 common and specialized 3D printing materials in one go.
 -   **Rich Console Output**: Presents data in beautifully formatted and easy-to-read tables.
 -   **JSON Output**: Supports JSON output for easy integration with other scripts and applications.
