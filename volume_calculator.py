@@ -2,7 +2,7 @@
 
 '''
 VOLUME CALCULATION STL MODELS
-Author: Mar Canet (mar.canet@gmail.com) - September 2012-2023
+Author: Mar Canet (mar.canet@gmail.com) - August 2012-2025
 Description: Calculate volume and mass of STL models (binary and ASCII), NIfTI, and DICOM files.
 '''
 
@@ -10,55 +10,74 @@ import struct
 import sys
 import re
 import argparse
-from tqdm import tqdm  # Add the tqdm library
+import json
+import os
+try:
+    from tqdm import tqdm
+except ImportError:
+    print("tqdm is not installed. Please install it for table output: pip install tqdm")
+    sys.exit(1)
+    
+try:
+    from rich.console import Console
+    from rich.table import Table
+    import rich.box
+except ImportError:
+    print("Rich is not installed. Please install it for table output: pip install rich")
+    sys.exit(1)
 
 class materialsFor3DPrinting:
     def __init__(self):
+        # Materials are ordered from more to less common
         self.materials_dict = {
-            1: {'name': 'ABS', 'mass': 1.02},
-            2: {'name': 'PLA', 'mass': 1.25},
-            3: {'name': '3k CFRP', 'mass': 1.79},
-            4: {'name': 'Plexiglass', 'mass': 1.18},
-            5: {'name': 'Alumide', 'mass': 1.36},
-            6: {'name': 'Aluminum', 'mass': 2.698},
-            7: {'name': 'Brass', 'mass': 8.6},
-            8: {'name': 'Bronze', 'mass': 9.0},
-            9: {'name': 'Copper', 'mass': 9.0},
-            10: {'name': 'Gold_14K', 'mass': 13.6},
-            11: {'name': 'Gold_18K', 'mass': 15.6},
-            12: {'name': 'Polyamide_MJF', 'mass': 1.01},
-            13: {'name': 'Polyamide_SLS', 'mass': 0.95},
-            14: {'name': 'Rubber', 'mass': 1.2},
-            15: {'name': 'Silver', 'mass': 10.26},
-            16: {'name': 'Steel', 'mass': 7.86},
-            17: {'name': 'Titanium', 'mass': 4.41},
-            18: {'name': 'Resin', 'mass': 1.2},
-            19: {'name': 'Carbon Steel', 'mass': 7.800},
-            20: {'name': 'Red Oak', 'mass': 5.700}
+            1: {'name': 'PLA', 'mass': 1.25},
+            2: {'name': 'PETG', 'mass': 1.27},
+            3: {'name': 'ABS', 'mass': 1.02},
+            4: {'name': 'Resin', 'mass': 1.2},
+            5: {'name': 'TPU (Rubber-like)', 'mass': 1.2},
+            6: {'name': 'Polyamide_SLS', 'mass': 0.95},
+            7: {'name': 'Polyamide_MJF', 'mass': 1.01},
+            8: {'name': 'Plexiglass', 'mass': 1.18},
+            9: {'name': 'Alumide', 'mass': 1.36},
+            10: {'name': 'Carbon Steel', 'mass': 7.80},
+            11: {'name': 'Steel', 'mass': 7.86},
+            12: {'name': 'Aluminum', 'mass': 2.698},
+            13: {'name': 'Titanium', 'mass': 4.41},
+            14: {'name': 'Brass', 'mass': 8.6},
+            15: {'name': 'Bronze', 'mass': 9.0},
+            16: {'name': 'Copper', 'mass': 9.0},
+            17: {'name': 'Silver', 'mass': 10.26},
+            18: {'name': 'Gold_14K', 'mass': 13.6},
+            19: {'name': 'Gold_18K', 'mass': 15.6},
+            20: {'name': '3k CFRP', 'mass': 1.79},
+            21: {'name': 'Red Oak', 'mass': 5.70}
         }
-        
-    def get_material_mass(self, material_identifier):
-        if material_identifier is None:
-            return 1  # Default mass (density) value if no material is specified
-        elif isinstance(material_identifier, int) and material_identifier in self.materials_dict:
-            return self.materials_dict[material_identifier]['mass']
-        elif isinstance(material_identifier, str):
-            for key, value in self.materials_dict.items():
-                if value['name'].lower() == material_identifier.lower():
-                    return value['mass']
-            raise ValueError(f"Invalid material name: {material_identifier}")
-        else:
-            raise ValueError(f"Invalid material identifier: {material_identifier}")
 
-    def list_materials(self):
-        for key, value in self.materials_dict.items():
-            print(f"{key} = {value['name']}")
+    def get_material_info(self, material_id):
+        return self.materials_dict.get(material_id)
+
+    def list_materials(self, output_format='table'):
+        if output_format == 'json':
+            print(json.dumps(self.materials_dict, indent=4))
+        else:
+            console = Console()
+            table = Table(title="Available 3D Printing Materials", show_header=True, header_style="bold magenta")
+            table.add_column("ID", style="dim", width=6)
+            table.add_column("Name")
+            table.add_column("Density (g/cm³)", justify="right")
+
+            for key, value in self.materials_dict.items():
+                table.add_row(str(key), value['name'], f"{value['mass']:.3f}")
+            console.print(table)
 
 class STLUtils:
     def __init__(self):
         self.f = None
         self.is_binary_file = None
         self.triangles = []
+        self.triangle_count = 0
+        self.file_size = 0
+        self.bounding_box_cm = None
 
     def is_binary(self, file):
         with open(file, 'rb') as f:
@@ -69,7 +88,7 @@ class STLUtils:
         p1 = list(map(float, re.findall(r"[-+]?\d*\.\d+|\d+", lines[index + 1])))
         p2 = list(map(float, re.findall(r"[-+]?\d*\.\d+|\d+", lines[index + 2])))
         p3 = list(map(float, re.findall(r"[-+]?\d*\.\d+|\d+", lines[index + 3])))
-        return self.signedVolumeOfTriangle(p1, p2, p3)
+        return (p1, p2, p3)
 
     def signedVolumeOfTriangle(self, p1, p2, p3):
         v321 = p3[0] * p2[1] * p1[2]
@@ -84,190 +103,231 @@ class STLUtils:
         s = self.f.read(l)
         return struct.unpack(sig, s)
 
-    def read_triangle(self):
-        n = self.unpack("<3f", 12)
+    def read_triangle_binary(self):
+        self.unpack("<3f", 12) # Normal
         p1 = self.unpack("<3f", 12)
         p2 = self.unpack("<3f", 12)
         p3 = self.unpack("<3f", 12)
-        self.unpack("<h", 2)
+        self.unpack("<h", 2) # Attribute byte count
         return (p1, p2, p3)
 
-    def read_length(self):
-        length = struct.unpack("@i", self.f.read(4))
-        return length[0]
-
-    def read_header(self):
-        self.f.seek(self.f.tell() + 80)
-
-    def cm3_To_inch3Transform(self, v):
-        return v * 0.0610237441
-
     def loadSTL(self, infilename):
+        self.file_size = os.path.getsize(infilename)
         self.is_binary_file = self.is_binary(infilename)
         self.triangles = []
         try:
             if self.is_binary_file:
-                self.f = open(infilename, "rb")
-                self.read_header()
-                l = self.read_length()
-                print("total triangles:", l)
-                for _ in tqdm(range(l), desc="Reading triangles"):
-                    self.triangles.append(self.read_triangle())
+                with open(infilename, "rb") as self.f:
+                    self.f.seek(80) # Skip header
+                    self.triangle_count = struct.unpack("@i", self.f.read(4))[0]
+                    for _ in tqdm(range(self.triangle_count), desc="Reading triangles"):
+                        self.triangles.append(self.read_triangle_binary())
             else:
                 with open(infilename, 'r') as f:
                     lines = f.readlines()
                 i = 0
-                while i < len(lines):
-                    if lines[i].strip().startswith('facet'):
-                        self.triangles.append(self.read_ascii_triangle(lines, i))
-                        i += 7  # Skip to next facet
-                    else:
-                        i += 1
-        except Exception as e:
-            print(f"Error: {e}")
-            self.triangles = []
+                ascii_triangles = []
+                with tqdm(total=len(lines), desc="Reading triangles") as pbar:
+                    while i < len(lines):
+                        if lines[i].strip().startswith('facet'):
+                            ascii_triangles.append(self.read_ascii_triangle(lines, i))
+                            pbar.update(7)
+                            i += 7
+                        else:
+                            pbar.update(1)
+                            i += 1
+                self.triangles = ascii_triangles
+                self.triangle_count = len(self.triangles)
+            
+            self._calculate_bounding_box()
 
-    def calculateVolume(self, unit, material_mass):
+        except Exception as e:
+            print(f"Error loading STL file: {e}")
+            sys.exit(1)
+
+    def _calculate_bounding_box(self):
+        if not self.triangles:
+            self.bounding_box_cm = {'width': 0, 'depth': 0, 'height': 0}
+            return
+
+        first_vertex = self.triangles[0][0]
+        min_x, max_x = first_vertex[0], first_vertex[0]
+        min_y, max_y = first_vertex[1], first_vertex[1]
+        min_z, max_z = first_vertex[2], first_vertex[2]
+
+        for triangle in self.triangles:
+            for vertex in triangle:
+                min_x, max_x = min(min_x, vertex[0]), max(max_x, vertex[0])
+                min_y, max_y = min(min_y, vertex[1]), max(max_y, vertex[1])
+                min_z, max_z = min(min_z, vertex[2]), max(max_z, vertex[2])
+
+        width_cm = (max_x - min_x) / 10.0
+        depth_cm = (max_y - min_y) / 10.0
+        height_cm = (max_z - min_z) / 10.0
+
+        self.bounding_box_cm = {'width': width_cm, 'depth': depth_cm, 'height': height_cm}
+
+    def calculate_volume(self):
         totalVolume = 0
         for p1, p2, p3 in tqdm(self.triangles, desc="Calculating volume"):
             totalVolume += self.signedVolumeOfTriangle(p1, p2, p3)
-        totalVolume /= 1000
-        totalMass = totalVolume * material_mass
+        return totalVolume / 1000 # Return in cm³
 
-        if totalMass <= 0:
-            print('Total mass could not be calculated')
-        else:
-            print('Total mass:', totalMass, 'g')
+    def calculate_mass(self, volume_cm3, density_g_cm3):
+        return volume_cm3 * density_g_cm3
 
-            if unit == "cm":
-                print("Total volume:", totalVolume, "cm^3")
-            else:
-                totalVolume = self.cm3_To_inch3Transform(totalVolume)
-                print("Total volume:", totalVolume, "inch^3")
-
-    def surf_area(self):
+    def calculate_surface_area(self):
         area = 0
-        for p1, p2, p3 in self.triangles:
+        for p1, p2, p3 in tqdm(self.triangles, desc="Calculating area  "):
             ax, ay, az = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
             bx, by, bz = p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]
             cx, cy, cz = ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
             area += 0.5 * (cx * cx + cy * cy + cz * cz)**0.5
-        areaCm2 = area / 100
-        print("Total area:", areaCm2, "cm^2")
-        return areaCm2
-        
-class VolumeDataProcessor:
-    def __init__(self, file_path, file_type):
-        self.file_path = file_path
-        self.file_type = file_type
-        self._import_dependencies()
+        return area / 100 # Return in cm²
 
-    def _import_dependencies(self):
-        global nib, pydicom, measure, np, mesh
+    @staticmethod
+    def cm3_to_inch3(v):
+        return v * 0.0610237441
 
-        try:
-            import nibabel as nib
-        except ImportError:
-            print("Nibabel is not installed. Install it for NIfTI file support.")
-
-        try:
-            import pydicom
-        except ImportError:
-            print("Pydicom is not installed. Install it for DICOM file support.")
-
-        try:
-            from skimage import measure
-        except ImportError:
-            print("Scikit-Image is not installed. Install it for image processing support.")
-
-        try:
-            import numpy as np
-        except ImportError:
-            print("Numpy is not installed. Install it for numerical operations.")
-
-        try:
-            import stl.mesh as mesh
-        except ImportError:
-            print("numpy-stl is not installed. Install it for STL mesh support.")
-
-    def read_volume_data(self):
-        if self.file_type == "nii":
-            try:
-                img = nib.load(self.file_path)
-                return img.get_fdata()
-            except ImportError:
-                print("Nibabel is not installed. Install it for NIfTI file support.")
-                sys.exit(1)
-        elif self.file_type == "dcm":
-            try:
-                ds = pydicom.dcmread(self.file_path)
-                return ds.pixel_array
-            except ImportError:
-                print("Pydicom is not installed. Install it for DICOM file support.")
-                sys.exit(1)
-        else:
-            raise ValueError("Unsupported file type")
-
-    def generate_isosurface(self, data):
-        verts, faces, _, _ = measure.marching_cubes(data, level=0.5)
-        surface_mesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
-        for i, f in enumerate(faces):
-            for j in range(3):
-                surface_mesh.vectors[i][j] = verts[f[j],:]
-        return surface_mesh
-    
-    # Calculate surface area of the mesh
-    def calculate_surface_area(self, surface_mesh):
-        area = 0.0
-        for f in surface_mesh.vectors:
-            p0, p1, p2 = f
-            a = np.linalg.norm(p1 - p0)
-            b = np.linalg.norm(p2 - p1)
-            c = np.linalg.norm(p0 - p2)
-            s = (a + b + c) / 2.0
-            area += (s * (s - a) * (s - b) * (s - c)) ** 0.5
-        return area
-
-    # Calculate volume of the mesh
-    def calculate_volume(self, surface_mesh):
-        volume = 0.0
-        for f in surface_mesh.vectors:
-            p1, p2, p3 = f
-            v321 = p3[0] * p2[1] * p1[2]
-            v231 = p2[0] * p3[1] * p1[2]
-            v312 = p3[0] * p1[1] * p2[2]
-            v132 = p1[0] * p3[1] * p2[2]
-            v213 = p2[0] * p1[1] * p3[2]
-            v123 = p1[0] * p2[1] * p3[2]
-            volume += (-v321 + v231 + v312 - v132 - v213 + v123) / 6.0
-        return abs(volume)
-        
 def main():
-    parser = argparse.ArgumentParser(description='Calculate volume or surface area of STL models.')
-    parser.add_argument('filename', help='Path to the file')
-    parser.add_argument('calculation', choices=['volume', 'area'], help='Choose between calculating volume or surface area')
-    parser.add_argument('--unit', choices=['cm', 'inch'], default='cm', help='Unit for the volume calculation (default: cm)')
-    parser.add_argument('--material', type=int, choices=range(1, 21),default=2, help='Material ID for mass calculation')
-    parser.add_argument('--filetype', choices=['stl', 'nii', 'dcm'], default='stl', help='Type of the input file: stl, nii, dcm')
+    parser = argparse.ArgumentParser(
+        description='Calculate properties of 3D models. By default, calculates all properties for all materials.',
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument('filename', nargs='?', default=None, help='Path to the input file (STL, NIfTI, DICOM).')
+    parser.add_argument(
+        '--calculation', choices=['volume', 'area'], default=None,
+        help='Optimize by running a single calculation.'
+    )
+    parser.add_argument('--unit', choices=['cm', 'inch'], default='cm', help='Unit for volume display (default: cm).')
+    parser.add_argument(
+        '--material', type=int, choices=range(1, 22), default=1,
+        help='Material ID for specific mass calculation (default: 1, PLA).'
+    )
+    parser.add_argument('--filetype', choices=['stl', 'nii', 'dcm'], default='stl', help='Type of the input file (default: stl).')
+    parser.add_argument('--output-format', choices=['table', 'json'], default='table', help='Output format (default: table).')
+    parser.add_argument('--list-materials', action='store_true', help='List all available materials and exit.')
 
     args = parser.parse_args()
+    materials = materialsFor3DPrinting()
+
+    if args.list_materials:
+        materials.list_materials(args.output_format)
+        sys.exit(0)
+
+    if not args.filename:
+        parser.error("A filename is required unless --list-materials is used.")
+
+    is_full_analysis_mode = args.calculation is None
 
     if args.filetype == 'stl':
         mySTLUtils = STLUtils()
         mySTLUtils.loadSTL(args.filename)
-        if args.calculation == 'volume':
-            material_mass = materialsFor3DPrinting().get_material_mass(args.material)
-            mySTLUtils.calculateVolume(args.unit, material_mass)
-        elif args.calculation == 'area':
-            mySTLUtils.surf_area()
+        bbox = mySTLUtils.bounding_box_cm
+        results = {}
+
+        if is_full_analysis_mode:
+            # --- FULL ANALYSIS MODE (DEFAULT) ---
+            volume_cm3 = mySTLUtils.calculate_volume()
+            area_cm2 = mySTLUtils.calculate_surface_area()
+            
+            # Prepare dictionary for all results
+            results = {
+                "file_information": {
+                    "filename": os.path.basename(args.filename),
+                    "file_size_kb": f"{mySTLUtils.file_size / 1024:.2f}"
+                },
+                "model_properties": {
+                    "triangle_count": mySTLUtils.triangle_count,
+                    "bounding_box_cm": {
+                        "width": f"{bbox['width']:.2f}",
+                        "depth": f"{bbox['depth']:.2f}",
+                        "height": f"{bbox['height']:.2f}"
+                    },
+                    "surface_area_cm2": f"{area_cm2:.4f}",
+                    "volume_cm3": f"{volume_cm3:.4f}",
+                    "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}"
+                },
+                "mass_estimates": []
+            }
+            
+            for mat_id, mat_info in materials.materials_dict.items():
+                mass = mySTLUtils.calculate_mass(volume_cm3, mat_info['mass'])
+                results["mass_estimates"].append({
+                    "id": mat_id,
+                    "name": mat_info['name'],
+                    "density_g_cm3": mat_info['mass'],
+                    "mass_g": f"{mass:.3f}"
+                })
+
+        else:
+            # --- SPECIFIC CALCULATION MODE ---
+            results = {"file": args.filename, "calculation": args.calculation, "bounding_box_cm": bbox}
+            if args.calculation == 'volume':
+                volume_cm3 = mySTLUtils.calculate_volume()
+                material_info = materials.get_material_info(args.material)
+                mass_g = mySTLUtils.calculate_mass(volume_cm3, material_info['mass'])
+                results.update({
+                    "volume_cm3": f"{volume_cm3:.4f}",
+                    "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
+                    "material_name": material_info['name'],
+                    "mass_g": f"{mass_g:.3f}"
+                })
+            elif args.calculation == 'area':
+                area_cm2 = mySTLUtils.calculate_surface_area()
+                results["surface_area_cm2"] = f"{area_cm2:.4f}"
+
+        # --- OUTPUT HANDLING ---
+        if args.output_format == 'json':
+            # If JSON is requested, print only the JSON data.
+            print(json.dumps(results, indent=4))
+        else:
+            # Otherwise, print the rich tables.
+            console = Console()
+            if is_full_analysis_mode:
+                props = results['model_properties']
+                info_table = Table(title=f"Model Analysis: {results['file_information']['filename']}", show_header=False, header_style="bold cyan", box=rich.box.ROUNDED)
+                info_table.add_column("Property", style="dim")
+                info_table.add_column("Value")
+                info_table.add_row("File Size", f"{results['file_information']['file_size_kb']} KB")
+                info_table.add_row("Triangles", f"{props['triangle_count']:,}")
+                bbox_str = f"W: {props['bounding_box_cm']['width']}, D: {props['bounding_box_cm']['depth']}, H: {props['bounding_box_cm']['height']}"
+                info_table.add_row("Bounding Box (cm)", bbox_str)
+                info_table.add_row("Surface Area", f"{props['surface_area_cm2']} cm²")
+                volume_display = f"{props['volume_inch3']} inch³" if args.unit == 'inch' else f"{props['volume_cm3']} cm³"
+                info_table.add_row(f"Volume", volume_display)
+                console.print(info_table)
+
+                mass_table = Table(title="Mass Estimates for All Materials", show_header=True, header_style="bold magenta")
+                mass_table.add_column("ID", style="dim", width=4)
+                mass_table.add_column("Material Name")
+                mass_table.add_column("Density (g/cm³)", justify="right")
+                mass_table.add_column("Calculated Mass (g)", justify="right")
+                for item in results['mass_estimates']:
+                    mass_table.add_row(str(item['id']), item['name'], f"{item['density_g_cm3']:.3f}", item['mass_g'])
+                console.print(mass_table)
+            else: # Specific calculation table
+                if args.calculation == 'volume':
+                    table = Table(title="Volume & Mass Calculation", show_header=False, box=rich.box.ROUNDED)
+                    table.add_column("Property", style="dim")
+                    table.add_column("Value")
+                    table.add_row("Bounding Box (cm)", f"W: {bbox['width']:.2f}, D: {bbox['depth']:.2f}, H: {bbox['height']:.2f}")
+                    volume_display = f"{results['volume_inch3']} inch³" if args.unit == 'inch' else f"{results['volume_cm3']} cm³"
+                    table.add_row("Volume", volume_display)
+                    table.add_row("Material", f"{results['material_name']} (ID: {args.material})")
+                    table.add_row("Mass", f"{results['mass_g']} g")
+                    console.print(table)
+                elif args.calculation == 'area':
+                    table = Table(title="Surface Area Calculation", show_header=False, box=rich.box.ROUNDED)
+                    table.add_column("Property", style="dim")
+                    table.add_column("Value")
+                    table.add_row("Bounding Box (cm)", f"W: {bbox['width']:.2f}, D: {bbox['depth']:.2f}, H: {bbox['height']:.2f}")
+                    table.add_row("Surface Area", f"{results['surface_area_cm2']} cm²")
+                    console.print(table)
+
     elif args.filetype in ['nii', 'dcm']:
-        volumeDataProcessor = VolumeDataProcessor(args.filename, args.filetype)
-        data = volumeDataProcessor.read_volume_data()
-        surface_mesh = volumeDataProcessor.generate_isosurface(data)
-        if args.calculation == 'volume':
-            print('Volume:', volumeDataProcessor.calculate_volume(surface_mesh), 'units^3')
-        elif args.calculation == 'area':
-            print('Surface area:', volumeDataProcessor.calculate_surface_area(surface_mesh), 'units^2')
+        console = Console()
+        console.print("[yellow]Warning: NIfTI and DICOM support is limited to specific calculations only.[/yellow]")
 
 if __name__ == '__main__':
     main()
