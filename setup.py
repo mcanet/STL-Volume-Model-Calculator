@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='stl-volume-calculator',
-    version='1.0.1',  # Incremented version to reflect changes
+    version='1.0.2',  # Incremented version to reflect changes
     author='Mar Canet',
     author_email='mar.canet@gmail.com',
     description='Calculate volume, area, bounding box, and mass of STL, NIfTI, and DICOM files.',
