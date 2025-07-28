@@ -204,12 +204,19 @@ def main():
         '--material', type=int, choices=range(1, 22), default=1,
         help='Material ID for specific mass calculation (default: 1, PLA).'
     )
+    parser.add_argument(
+        '--infill', type=float, default=20.0,
+        help='Infill percentage for mass calculation (default: 20.0).'
+    )
     parser.add_argument('--filetype', choices=['stl', 'nii', 'dcm'], default='stl', help='Type of the input file (default: stl).')
     parser.add_argument('--output-format', choices=['table', 'json'], default='table', help='Output format (default: table).')
     parser.add_argument('--list-materials', action='store_true', help='List all available materials and exit.')
 
     args = parser.parse_args()
     materials = materialsFor3DPrinting()
+
+    if not 0.0 <= args.infill <= 100.0:
+        parser.error("Infill percentage must be between 0 and 100.")
 
     if args.list_materials:
         materials.list_materials(args.output_format)
@@ -231,7 +238,8 @@ def main():
             volume_cm3 = mySTLUtils.calculate_volume()
             area_cm2 = mySTLUtils.calculate_surface_area()
             
-            # Prepare dictionary for all results
+            adjusted_volume_cm3 = volume_cm3 * (args.infill / 100.0)
+
             results = {
                 "file_information": {
                     "filename": os.path.basename(args.filename),
@@ -252,12 +260,21 @@ def main():
             }
             
             for mat_id, mat_info in materials.materials_dict.items():
-                mass = mySTLUtils.calculate_mass(volume_cm3, mat_info['mass'])
+                mass_infill = mySTLUtils.calculate_mass(adjusted_volume_cm3, mat_info['mass'])
+                mass_solid = mySTLUtils.calculate_mass(volume_cm3, mat_info['mass'])
+                # MODIFIED: Changed to a more structured and explicit JSON format
                 results["mass_estimates"].append({
                     "id": mat_id,
                     "name": mat_info['name'],
                     "density_g_cm3": mat_info['mass'],
-                    "mass_g": f"{mass:.3f}"
+                    "mass_at_infill": {
+                        "infill_percent": args.infill,
+                        "mass_g": f"{mass_infill:.3f}"
+                    },
+                    "mass_at_100_infill": {
+                        "infill_percent": 100.0,
+                        "mass_g": f"{mass_solid:.3f}"
+                    }
                 })
 
         else:
@@ -265,13 +282,25 @@ def main():
             results = {"file": args.filename, "calculation": args.calculation, "bounding_box_cm": bbox}
             if args.calculation == 'volume':
                 volume_cm3 = mySTLUtils.calculate_volume()
+                adjusted_volume_cm3 = volume_cm3 * (args.infill / 100.0)
                 material_info = materials.get_material_info(args.material)
-                mass_g = mySTLUtils.calculate_mass(volume_cm3, material_info['mass'])
+
+                mass_g_infill = mySTLUtils.calculate_mass(adjusted_volume_cm3, material_info['mass'])
+                mass_g_solid = mySTLUtils.calculate_mass(volume_cm3, material_info['mass'])
+                
+                # MODIFIED: Changed to a more structured and explicit JSON format
                 results.update({
                     "volume_cm3": f"{volume_cm3:.4f}",
                     "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
                     "material_name": material_info['name'],
-                    "mass_g": f"{mass_g:.3f}"
+                    "mass_at_infill": {
+                        "infill_percent": args.infill,
+                        "mass_g": f"{mass_g_infill:.3f}"
+                    },
+                    "mass_at_100_infill": {
+                        "infill_percent": 100.0,
+                        "mass_g": f"{mass_g_solid:.3f}"
+                    }
                 })
             elif args.calculation == 'area':
                 area_cm2 = mySTLUtils.calculate_surface_area()
@@ -279,10 +308,8 @@ def main():
 
         # --- OUTPUT HANDLING ---
         if args.output_format == 'json':
-            # If JSON is requested, print only the JSON data.
             print(json.dumps(results, indent=4))
         else:
-            # Otherwise, print the rich tables.
             console = Console()
             if is_full_analysis_mode:
                 props = results['model_properties']
@@ -295,16 +322,25 @@ def main():
                 info_table.add_row("Bounding Box (cm)", bbox_str)
                 info_table.add_row("Surface Area", f"{props['surface_area_cm2']} cm²")
                 volume_display = f"{props['volume_inch3']} inch³" if args.unit == 'inch' else f"{props['volume_cm3']} cm³"
-                info_table.add_row(f"Volume", volume_display)
+                info_table.add_row(f"Volume (solid)", volume_display)
                 console.print(info_table)
 
-                mass_table = Table(title="Mass Estimates for All Materials", show_header=True, header_style="bold magenta")
+                mass_table = Table(title="Mass Estimates for All Materials With selected infill and 100% infill", show_header=True, header_style="bold magenta")
                 mass_table.add_column("ID", style="dim", width=4)
                 mass_table.add_column("Material Name")
-                mass_table.add_column("Density (g/cm³)", justify="right")
-                mass_table.add_column("Calculated Mass (g)", justify="right")
+                mass_table.add_column("Density", justify="right")
+                mass_table.add_column(f"Mass @ {args.infill:.1f}% (g)", justify="right")
+                mass_table.add_column("Mass @ 100% (g)", justify="right")
+                
+                # MODIFIED: Accessing data from the new structure for the table
                 for item in results['mass_estimates']:
-                    mass_table.add_row(str(item['id']), item['name'], f"{item['density_g_cm3']:.3f}", item['mass_g'])
+                    mass_table.add_row(
+                        str(item['id']), 
+                        item['name'], 
+                        f"{item['density_g_cm3']:.3f}", 
+                        item['mass_at_infill']['mass_g'],
+                        item['mass_at_100_infill']['mass_g']
+                    )
                 console.print(mass_table)
             else: # Specific calculation table
                 if args.calculation == 'volume':
@@ -313,9 +349,11 @@ def main():
                     table.add_column("Value")
                     table.add_row("Bounding Box (cm)", f"W: {bbox['width']:.2f}, D: {bbox['depth']:.2f}, H: {bbox['height']:.2f}")
                     volume_display = f"{results['volume_inch3']} inch³" if args.unit == 'inch' else f"{results['volume_cm3']} cm³"
-                    table.add_row("Volume", volume_display)
+                    table.add_row("Volume (solid)", volume_display)
                     table.add_row("Material", f"{results['material_name']} (ID: {args.material})")
-                    table.add_row("Mass", f"{results['mass_g']} g")
+                    # MODIFIED: Accessing data from the new structure for the table
+                    table.add_row(f"Mass ({args.infill:.1f}% Infill)", f"{results['mass_at_infill']['mass_g']} g")
+                    table.add_row("Mass (100% Infill)", f"{results['mass_at_100_infill']['mass_g']} g")
                     console.print(table)
                 elif args.calculation == 'area':
                     table = Table(title="Surface Area Calculation", show_header=False, box=rich.box.ROUNDED)
