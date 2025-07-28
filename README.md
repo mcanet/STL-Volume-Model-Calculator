@@ -1,46 +1,54 @@
 # STL Volume Model Calculator
 
-This script provides functionality to calculate the volume and surface area of 3D models stored in the STL file format, as well as estimate the weight of the model based on the selected material. It is implemented in Python and supports both binary and ASCII STL files.
+A easy-to-use command-line tool to calculate the volume, surface area, bounding box, and mass of 3D STL models. It provides a comprehensive analysis by default and supports STL (ASCII and binary), NIfTI, and DICOM formats.
+
+## Key Features
+
+-   **Comprehensive Analysis by Default**: Run it with just a filename to get file size, triangle count, bounding box, surface area, and volume.
+-   **Full Mass Estimation**: Automatically calculates the estimated mass for over 20 common and specialized 3D printing materials in one go.
+-   **Rich Console Output**: Presents data in beautifully formatted and easy-to-read tables.
+-   **JSON Output**: Supports JSON output for easy integration with other scripts and applications.
+-   **Optimized Calculations**: Option to run specific, single calculations for faster results in automated workflows.
+-   **Broad File Support**: Handles binary and ASCII STL files, as well as medical imaging formats like NIfTI and DICOM.
 
 ## Installation
 
-Make sure you have [Python 3](https://www.python.org/) installed. Then clone the repository and install the required Python libraries using:
+Make sure you have [Python 3.6+](https://www.python.org/) installed. You can then install the tool directly from the source code.
 
-```bash
-pip install -r requirements.txt
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/mcanet/STL-Volume-Model-Calculator.git
+    cd STL-Volume-Model-Calculator
+    ```
+2.  **Install the package:**
+    This command uses the `setup.py` file to handle all dependencies and install the `volume-calculator` command in your system.
+    ```bash
+    pip install .
+    ```
+
 ## Usage
 
-To use the script, navigate to the directory containing `volume_calculator.py` and your STL file in a terminal, then execute one of the following commands based on your needs:
+After installation, you can run the `volume-calculator` command from any directory.
 
-### Volume and Mass Calculation
+### Default Full Analysis
 
-```bash
-python volume_calculator.py <filename.stl> volume --material <material_id_or_name> [--unit cm|inch]
-```
-### Surface Area Calculation
-```bash
-python volume_calculator.py <filename.stl> area
-```
-
-### Arguments:
-
-<filename.stl>: Replace with the path to your STL file.
-<material_id_or_name>: Replace with the ID or name of the material you want to use for mass estimation (see the list of materials above).
-Options:
-
---unit: (Optional) Specify the unit for volume calculation. Choices are cm (default) or inch.
-Examples:
-
-Calculate the volume and mass of torus.stl using ABS material:
+This is the recommended and most common use case. Simply provide the path to your model.
 
 ```bash
-python volume_calculator.py torus.stl volume --material ABS
+volume-calculator YourModel.stl
 ```
-Calculate the surface area of torus.stl:
-```bash
-python volume_calculator.py torus.stl area
-```
+
+## Command-Line Arguments
+
+| Argument           | Description                                                                  |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `filename`         | Path to your model file (STL, NIfTI, DICOM).                                 |
+| `--calculation`    | (Optional) Optimize by running a single calculation: `volume` or `area`.     |
+| `--material <ID>`  | (Optional) Use with `--calculation volume` to specify a material ID.         |
+| `--unit <unit>`    | (Optional) Display volume in `cm` (default) or `inch`.                       |
+| `--output-format`  | (Optional) Choose output format: `table` (default) or `json`.                |
+| `--list-materials` | Display a table of all available materials and their IDs, then exit.         |
+
 ## Materials Supported
 
 The script comes with an extensive list of 3D printable materials each with its specified density which is used to calculate the mass of the model. The materials included are:
