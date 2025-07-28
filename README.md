@@ -40,14 +40,15 @@ volume-calculator YourModel.stl
 
 ## Command-Line Arguments
 
-| Argument           | Description                                                                  |
-| ------------------ | ---------------------------------------------------------------------------- |
-| `filename`         | Path to your model file (STL, NIfTI, DICOM).                                 |
-| `--calculation`    | (Optional) Optimize by running a single calculation: `volume` or `area`.     |
-| `--material <ID>`  | (Optional) Use with `--calculation volume` to specify a material ID.         |
-| `--unit <unit>`    | (Optional) Display volume in `cm` (default) or `inch`.                       |
-| `--output-format`  | (Optional) Choose output format: `table` (default) or `json`.                |
-| `--list-materials` | Display a table of all available materials and their IDs, then exit.         |
+| Argument | Description |
+| :--- | :--- |
+| `filename` | Path to your model file (STL, NIfTI, DICOM). |
+| `--calculation` | (Optional) Optimize by running a single calculation: `volume` or `area`. |
+| `--infill <percentage>` | (Optional) The infill percentage used for the primary mass calculation. Defaults to 20.0. The secondary calculation is always 100%. |
+| `--material <ID>` | (Optional) Use with `--calculation volume` to specify a material ID. |
+| `--unit <unit>` | (Optional) Display volume in `cm` (default) or `inch`. |
+| `--output-format` | (Optional) Choose output format: `table` (default) or `json`. |
+| `--list-materials` | Display a table of all available materials and their IDs, then exit. |
 
 ## Materials Supported
 
