@@ -64,6 +64,7 @@ The script comes with an extensive list of 3D printable materials each with its 
 - Resin
 - Carbon Steel
 - Red Oak
+- PETG
 
 ## Reporting Issues
 Please report any error you may find to me (mar.canet@gmail.com).
