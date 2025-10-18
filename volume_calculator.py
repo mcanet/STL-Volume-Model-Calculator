@@ -230,12 +230,12 @@ class STLUtils:
         self,
     ) -> Tuple[float, Point3D]:
         """Computes the total volume of the loaded STL file, in cubed centimeters.
-        Also computes the centroid of the mesh.
+        Also computes the centroid of the mesh with coordinates in centimeters.
 
         Returns
         -------
         Tuple[float, Point3D]
-            Volume in cubed centimeters, coordinates of centroid of mesh
+            Volume in cubed centimeters, coordinates of centroid of mesh in centimeters
         """
         totalVolume = 0
         centroid = (0, 0, 0)
@@ -254,10 +254,11 @@ class STLUtils:
                 weighted_tetrahedron_centroid[1] + centroid[1],
                 weighted_tetrahedron_centroid[2] + centroid[2],
             )
+        # Return centroid in cm
         centroid = (
-            centroid[0] / totalVolume,
-            centroid[1] / totalVolume,
-            centroid[2] / totalVolume,
+            centroid[0] / totalVolume / 10,
+            centroid[1] / totalVolume / 10,
+            centroid[2] / totalVolume / 10,
         )
         # Return volume in cm³
         return totalVolume / 1000, centroid
@@ -351,7 +352,11 @@ def main():
                     "surface_area_cm2": f"{area_cm2:.4f}",
                     "volume_cm3": f"{volume_cm3:.4f}",
                     "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
-                    "centroid_mm": f"({centroid[0]:.4f}, {centroid[1]:.4f}, {centroid[2]:.4f})",
+                    "centroid_cm": {
+                        "x": f"{centroid[0]:.2f}",
+                        "y": f"{centroid[1]:.2f}",
+                        "z": f"{centroid[2]:.2f}",
+                    },
                 },
                 "mass_estimates": [],
             }
@@ -389,7 +394,11 @@ def main():
                 results.update(
                     {
                         "volume_cm3": f"{volume_cm3:.4f}",
-                        "centroid_mm": f"({centroid[0]:.4f}, {centroid[1]:.4f}, {centroid[2]:.4f})",
+                        "centroid_cm": {
+                            "x": f"{centroid[0]:.2f}",
+                            "y": f"{centroid[1]:.2f}",
+                            "z": f"{centroid[2]:.2f}",
+                        },
                         "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
                         "material_name": material_info["name"],
                         "mass_at_infill": {
@@ -420,7 +429,8 @@ def main():
                 info_table.add_row("Triangles", f"{props['triangle_count']:,}")
                 bbox_str = f"W: {props['bounding_box_cm']['width']}, D: {props['bounding_box_cm']['depth']}, H: {props['bounding_box_cm']['height']}"
                 info_table.add_row("Bounding Box (cm)", bbox_str)
-                info_table.add_row("Center of mass (mm)", f"{props['centroid_mm']}")
+                centroid_str = f"X: {props['centroid_cm']['x']}, Y: {props['centroid_cm']['y']}, Z: {props['centroid_cm']['z']}"
+                info_table.add_row("Center of mass (cm)", centroid_str)
                 info_table.add_row("Surface Area", f"{props['surface_area_cm2']} cm²")
                 volume_display = f"{props['volume_inch3']} inch³" if args.unit == 'inch' else f"{props['volume_cm3']} cm³"
                 info_table.add_row("Volume (solid)", volume_display)
