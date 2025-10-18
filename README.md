@@ -31,6 +31,35 @@ Make sure you have [Python 3.6+](https://www.python.org/) installed. You can the
 
 After installation, you can run the `volume-calculator` command from any directory.
 
+## Using a virtual environment
+
+If you wish to modify this program it might come useful to use a virtual environment.
+This can be created and activated as follow :
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate # On Windows : .venv\Scripts\activate
+```
+
+Now install dependencies with :
+
+```bash
+pip install -r requirement.txt
+```
+
+If more dependencies are needed please regenerate this file with :
+
+```bash
+pip install my-package
+pip freeze > requirements.txt
+```
+
+When done with the virtual environment it can be deactivated with :
+
+```bash
+deactivate
+```
+
 ### Default Full Analysis
 
 This is the recommended and most common use case. Simply provide the path to your model.
