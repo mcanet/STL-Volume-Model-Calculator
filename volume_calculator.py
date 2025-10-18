@@ -94,7 +94,8 @@ class STLUtils:
         p3 = list(map(float, re.findall(r"[-+]?\d*\.\d+|\d+", lines[index + 3])))
         return (p1, p2, p3)
 
-    def signedVolumeOfTriangle(self, p1: Point3D, p2: Point3D, p3: Point3D) -> float:
+    @staticmethod
+    def signedVolumeOfTriangle(p1: Point3D, p2: Point3D, p3: Point3D) -> float:
         """
         Compute the signed volume of the tetrahedron formed by three 3D points (p1, p2, p3)
         and the origin (0, 0, 0).
@@ -136,6 +137,26 @@ class STLUtils:
         v213 = p2[0] * p1[1] * p3[2]
         v123 = p1[0] * p2[1] * p3[2]
         return (1.0 / 6.0) * (-v321 + v231 + v312 - v132 - v213 + v123)
+
+    @staticmethod
+    def triangle_centroid(p1: Point3D, p2: Point3D, p3: Point3D) -> Point3D:
+        """Computes the centroid of the tetrahedron formed by given points plus origin (0,0,0).
+
+        Parameters
+        ----------
+        p1, p2, p3 : Point3D
+            Vertex of triangle
+
+        Returns
+        -------
+        Point3D
+            The coordinates of the centroid of the tetrahedron.
+        """
+        return (
+            (p1[0] + p2[0] + p3[0] + 0) / 4,
+            (p1[1] + p2[1] + p3[1] + 0) / 4,
+            (p1[2] + p2[2] + p3[2] + 0) / 4,
+        )
 
     def unpack(self, sig, count):
         s = self.f.read(count)
@@ -205,18 +226,41 @@ class STLUtils:
 
         self.bounding_box_cm = {'width': width_cm, 'depth': depth_cm, 'height': height_cm}
 
-    def calculate_volume(self) -> float:
+    def calculate_volume_and_centroid(
+        self,
+    ) -> Tuple[float, Point3D]:
         """Computes the total volume of the loaded STL file, in cubed centimeters.
+        Also computes the centroid of the mesh.
 
         Returns
         -------
-        float
-            Volume in cubed centimeters.
+        Tuple[float, Point3D]
+            Volume in cubed centimeters, coordinates of centroid of mesh
         """
         totalVolume = 0
+        centroid = (0, 0, 0)
         for p1, p2, p3 in tqdm(self.triangles, desc="Calculating volume"):
-            totalVolume += self.signedVolumeOfTriangle(p1, p2, p3)
-        return totalVolume / 1000 # Return in cm³
+            volume = STLUtils.signedVolumeOfTriangle(p1, p2, p3)
+            totalVolume += volume
+
+            tetrahedron_centroid = STLUtils.triangle_centroid(p1, p2, p3)
+            weighted_tetrahedron_centroid = (
+                tetrahedron_centroid[0] * volume,
+                tetrahedron_centroid[1] * volume,
+                tetrahedron_centroid[2] * volume,
+            )
+            centroid = (
+                weighted_tetrahedron_centroid[0] + centroid[0],
+                weighted_tetrahedron_centroid[1] + centroid[1],
+                weighted_tetrahedron_centroid[2] + centroid[2],
+            )
+        centroid = (
+            centroid[0] / totalVolume,
+            centroid[1] / totalVolume,
+            centroid[2] / totalVolume,
+        )
+        # Return volume in cm³
+        return totalVolume / 1000, centroid
 
     def calculate_mass(self, volume_cm3, density_g_cm3):
         return volume_cm3 * density_g_cm3
@@ -287,7 +331,7 @@ def main():
 
         if is_full_analysis_mode:
             # --- FULL ANALYSIS MODE (DEFAULT) ---
-            volume_cm3 = mySTLUtils.calculate_volume()
+            volume_cm3, centroid = mySTLUtils.calculate_volume_and_centroid()
             area_cm2 = mySTLUtils.calculate_surface_area()
             
             adjusted_volume_cm3 = volume_cm3 * (args.infill / 100.0)
@@ -295,20 +339,21 @@ def main():
             results = {
                 "file_information": {
                     "filename": os.path.basename(args.filename),
-                    "file_size_kb": f"{mySTLUtils.file_size / 1024:.2f}"
+                    "file_size_kb": f"{mySTLUtils.file_size / 1024:.2f}",
                 },
                 "model_properties": {
                     "triangle_count": mySTLUtils.triangle_count,
                     "bounding_box_cm": {
                         "width": f"{bbox['width']:.2f}",
                         "depth": f"{bbox['depth']:.2f}",
-                        "height": f"{bbox['height']:.2f}"
+                        "height": f"{bbox['height']:.2f}",
                     },
                     "surface_area_cm2": f"{area_cm2:.4f}",
                     "volume_cm3": f"{volume_cm3:.4f}",
-                    "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}"
+                    "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
+                    "centroid_mm": f"({centroid[0]:.4f}, {centroid[1]:.4f}, {centroid[2]:.4f})",
                 },
-                "mass_estimates": []
+                "mass_estimates": [],
             }
             
             for mat_id, mat_info in materials.materials_dict.items():
@@ -333,7 +378,7 @@ def main():
             # --- SPECIFIC CALCULATION MODE ---
             results = {"file": args.filename, "calculation": args.calculation, "bounding_box_cm": bbox}
             if args.calculation == 'volume':
-                volume_cm3 = mySTLUtils.calculate_volume()
+                volume_cm3, centroid = mySTLUtils.calculate_volume_and_centroid()
                 adjusted_volume_cm3 = volume_cm3 * (args.infill / 100.0)
                 material_info = materials.get_material_info(args.material)
 
@@ -341,19 +386,22 @@ def main():
                 mass_g_solid = mySTLUtils.calculate_mass(volume_cm3, material_info['mass'])
                 
                 # MODIFIED: Changed to a more structured and explicit JSON format
-                results.update({
-                    "volume_cm3": f"{volume_cm3:.4f}",
-                    "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
-                    "material_name": material_info['name'],
-                    "mass_at_infill": {
-                        "infill_percent": args.infill,
-                        "mass_g": f"{mass_g_infill:.3f}"
-                    },
-                    "mass_at_100_infill": {
-                        "infill_percent": 100.0,
-                        "mass_g": f"{mass_g_solid:.3f}"
+                results.update(
+                    {
+                        "volume_cm3": f"{volume_cm3:.4f}",
+                        "centroid_mm": f"({centroid[0]:.4f}, {centroid[1]:.4f}, {centroid[2]:.4f})",
+                        "volume_inch3": f"{mySTLUtils.cm3_to_inch3(volume_cm3):.4f}",
+                        "material_name": material_info["name"],
+                        "mass_at_infill": {
+                            "infill_percent": args.infill,
+                            "mass_g": f"{mass_g_infill:.3f}",
+                        },
+                        "mass_at_100_infill": {
+                            "infill_percent": 100.0,
+                            "mass_g": f"{mass_g_solid:.3f}",
+                        },
                     }
-                })
+                )
             elif args.calculation == 'area':
                 area_cm2 = mySTLUtils.calculate_surface_area()
                 results["surface_area_cm2"] = f"{area_cm2:.4f}"
@@ -372,6 +420,7 @@ def main():
                 info_table.add_row("Triangles", f"{props['triangle_count']:,}")
                 bbox_str = f"W: {props['bounding_box_cm']['width']}, D: {props['bounding_box_cm']['depth']}, H: {props['bounding_box_cm']['height']}"
                 info_table.add_row("Bounding Box (cm)", bbox_str)
+                info_table.add_row("Center of mass (mm)", f"{props['centroid_mm']}")
                 info_table.add_row("Surface Area", f"{props['surface_area_cm2']} cm²")
                 volume_display = f"{props['volume_inch3']} inch³" if args.unit == 'inch' else f"{props['volume_cm3']} cm³"
                 info_table.add_row("Volume (solid)", volume_display)
