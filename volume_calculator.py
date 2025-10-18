@@ -6,6 +6,7 @@ Author: Mar Canet (mar.canet@gmail.com) - August 2012-2025
 Description: Calculate volume and mass of STL models (binary and ASCII), NIfTI, and DICOM files.
 '''
 
+from typing import Tuple, List
 import struct
 import sys
 import re
@@ -25,6 +26,9 @@ try:
 except ImportError:
     print("Rich is not installed. Please install it for table output: pip install rich")
     sys.exit(1)
+
+Point3D = Tuple[float, float, float]
+
 
 class materialsFor3DPrinting:
     def __init__(self):
@@ -74,7 +78,7 @@ class STLUtils:
     def __init__(self):
         self.f = None
         self.is_binary_file = None
-        self.triangles = []
+        self.triangles: List[Tuple[Point3D, Point3D, Point3D]] = []
         self.triangle_count = 0
         self.file_size = 0
         self.bounding_box_cm = None
@@ -90,7 +94,41 @@ class STLUtils:
         p3 = list(map(float, re.findall(r"[-+]?\d*\.\d+|\d+", lines[index + 3])))
         return (p1, p2, p3)
 
-    def signedVolumeOfTriangle(self, p1, p2, p3):
+    def signedVolumeOfTriangle(self, p1: Point3D, p2: Point3D, p3: Point3D) -> float:
+        """
+        Compute the signed volume of the tetrahedron formed by three 3D points (p1, p2, p3)
+        and the origin (0, 0, 0).
+
+        This method effectively computes one-sixth of the determinant of the matrix whose
+        columns (or rows) are the position vectors of p1, p2, and p3. The determinant gives
+        the *signed volume* of the parallelepiped defined by those three vectors. Dividing
+        by 6 yields the volume of the tetrahedron.
+
+        Geometrically:
+            V_signed = (1/6) * det([p1, p2, p3])
+                    = (1/6) * (p1 . (p2 * p3))
+
+        - The *sign* of the result indicates the orientation (right- or left-handed) of
+        the triangle relative to the origin.
+        - The *magnitude* of the result gives the volume of the tetrahedron.
+
+        Parameters
+        ----------
+        p1, p2, p3 : tuple[float, float, float]
+            3D coordinates of the triangle's vertices.
+
+        Returns
+        -------
+        float
+            The signed volume of the tetrahedron (O, p1, p2, p3).
+
+        Examples
+        --------
+        >>> STLUtils().signedVolumeOfTriangle((1, 0, 0), (0, 1, 0), (0, 0, 1))
+        0.16666666666666666
+        >>> STLUtils().signedVolumeOfTriangle((1, 0, 0), (0, 0, 1), (0, 1, 0))
+        -0.16666666666666666
+        """
         v321 = p3[0] * p2[1] * p1[2]
         v231 = p2[0] * p3[1] * p1[2]
         v312 = p3[0] * p1[1] * p2[2]
@@ -103,7 +141,7 @@ class STLUtils:
         s = self.f.read(count)
         return struct.unpack(sig, s)
 
-    def read_triangle_binary(self):
+    def read_triangle_binary(self) -> Tuple[Point3D, Point3D, Point3D]:
         self.unpack("<3f", 12) # Normal
         p1 = self.unpack("<3f", 12)
         p2 = self.unpack("<3f", 12)
@@ -167,7 +205,14 @@ class STLUtils:
 
         self.bounding_box_cm = {'width': width_cm, 'depth': depth_cm, 'height': height_cm}
 
-    def calculate_volume(self):
+    def calculate_volume(self) -> float:
+        """Computes the total volume of the loaded STL file, in cubed centimeters.
+
+        Returns
+        -------
+        float
+            Volume in cubed centimeters.
+        """
         totalVolume = 0
         for p1, p2, p3 in tqdm(self.triangles, desc="Calculating volume"):
             totalVolume += self.signedVolumeOfTriangle(p1, p2, p3)
@@ -176,7 +221,14 @@ class STLUtils:
     def calculate_mass(self, volume_cm3, density_g_cm3):
         return volume_cm3 * density_g_cm3
 
-    def calculate_surface_area(self):
+    def calculate_surface_area(self) -> float:
+        """Computes the surface area of the loaded STL file, in squared centimeters.
+
+        Returns
+        -------
+        float
+            Surface in squared centimeters.
+        """
         area = 0
         for p1, p2, p3 in tqdm(self.triangles, desc="Calculating area  "):
             ax, ay, az = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
