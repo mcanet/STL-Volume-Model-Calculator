@@ -19,11 +19,6 @@ setup(
     
     # List of dependencies needed for the project
     install_requires=[
-        'numpy>=1.19',
-        'numpy-stl>=2.0',
-        'nibabel>=3.0',
-        'pydicom>=2.0',
-        'scikit-image>=0.19',
         'tqdm>=4.0',
         'rich>=10.0'  # Added dependency for table formatting
     ],
