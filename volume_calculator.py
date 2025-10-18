@@ -99,8 +99,8 @@ class STLUtils:
         v123 = p1[0] * p2[1] * p3[2]
         return (1.0 / 6.0) * (-v321 + v231 + v312 - v132 - v213 + v123)
 
-    def unpack(self, sig, l):
-        s = self.f.read(l)
+    def unpack(self, sig, count):
+        s = self.f.read(count)
         return struct.unpack(sig, s)
 
     def read_triangle_binary(self):
@@ -322,7 +322,7 @@ def main():
                 info_table.add_row("Bounding Box (cm)", bbox_str)
                 info_table.add_row("Surface Area", f"{props['surface_area_cm2']} cm²")
                 volume_display = f"{props['volume_inch3']} inch³" if args.unit == 'inch' else f"{props['volume_cm3']} cm³"
-                info_table.add_row(f"Volume (solid)", volume_display)
+                info_table.add_row("Volume (solid)", volume_display)
                 console.print(info_table)
 
                 mass_table = Table(title="Mass Estimates for All Materials With selected infill and 100% infill", show_header=True, header_style="bold magenta")
