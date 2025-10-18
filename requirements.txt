@@ -1,16 +1,5 @@
 # requirements.txt
 
-# For numerical operations and STL file handling
-numpy>=1.19
-numpy-stl>=2.0
-
-# For medical imaging file support (NIfTI, DICOM)
-nibabel>=3.0
-pydicom>=2.0
-
-# For image processing and mesh generation (marching cubes)
-scikit-image>=0.19
-
 # For progress bars
 tqdm>=4.0
 
