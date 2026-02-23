@@ -1,10 +1,12 @@
 # STL Volume Model Calculator
 
-A easy-to-use command-line tool to calculate the volume, surface area, bounding box, and mass of 3D STL models. It provides a comprehensive analysis by default and supports STL (ASCII and binary), NIfTI, and DICOM formats.
+An easy-to-use command-line tool to calculate the volume, surface area, bounding box, and mass of 3D STL models. It provides a comprehensive analysis by default and supports STL (ASCII and binary), NIfTI, and DICOM formats.
 
 ## Key Features
 
 -   **Comprehensive Analysis by Default**: Run it with just a filename to get file size, triangle count, bounding box, surface area, and volume.
+-   **Center of Mass Calculation**: The full analysis now computes and displays the centroid (X, Y, Z) of the mesh in cm, representing the center of mass for any uniform-density material. Useful for balancing and real-world placement. (from BriceCroix adoption)
+-   **Watertight Mesh Validation**: Automatically checks whether the mesh is a closed manifold (every edge shared by exactly 2 triangles) and reports the result in all output modes. Open or malformed meshes are flagged with a warning before calculations run, since the divergence theorem only produces correct results for closed meshes.
 -   **Dual Infill Mass Comparison**: Automatically calculates and compares the model's mass at a specified infill percentage (defaulting to 20%) against a 100% solid version.
 -   **Full Mass Estimation**: Automatically calculates the estimated mass for over 20 common and specialized 3D printing materials in one go.
 -   **Rich Console Output**: Presents data in beautifully formatted and easy-to-read tables.
