@@ -55,7 +55,7 @@ class materialsFor3DPrinting:
             18: {'name': 'Gold_14K',          'mass': 13.60},
             19: {'name': 'Gold_18K',          'mass': 15.60},
             20: {'name': '3k CFRP',           'mass': 1.79},
-            21: {'name': 'Red Oak',           'mass': 0.70},  # FIX #6: was 5.70 (typo); red oak ~0.70 g/cm³
+            21: {'name': 'Red Oak',           'mass': 0.70},  
         }
 
     def get_material_info(self, material_id):
@@ -87,7 +87,7 @@ class STLUtils:
         self.is_watertight = None  # populated after loadSTL
 
     # ------------------------------------------------------------------
-    # FIX #1: Reliable binary vs ASCII detection
+    # Reliable binary vs ASCII detection
     # ------------------------------------------------------------------
     def is_binary(self, filepath):
         """
@@ -123,7 +123,7 @@ class STLUtils:
         """
         Parse one ASCII STL facet starting at *index* (the 'facet normal' line).
 
-        FIX #4: Uses a robust float regex that handles scientific notation and
+        Uses a robust float regex that handles scientific notation and
         variable whitespace.  Validates that all three vertices were parsed
         before returning, and returns None on any parse failure so the caller
         can skip bad facets rather than crash.
@@ -186,7 +186,7 @@ class STLUtils:
 
             self._calculate_bounding_box()
 
-            # FIX #3: watertight check — must run after _calculate_bounding_box
+            # Watertight check — must run after _calculate_bounding_box
             self.is_watertight = self._check_watertight()
             if not self.is_watertight:
                 console.print(
@@ -230,7 +230,7 @@ class STLUtils:
         self._bbox_min = (min_x, min_y, min_z)
 
     # ------------------------------------------------------------------
-    # FIX #3: Watertight / closed-mesh validation
+    # Watertight / closed-mesh validation
     # ------------------------------------------------------------------
     def _check_watertight(self):
         """
@@ -253,7 +253,7 @@ class STLUtils:
         return all(count == 2 for count in edge_count.values())
 
     # ------------------------------------------------------------------
-    # FIX #1 (volume) + FIX #5 (memory): translate to origin — as a generator
+    # Volume + Memory: translate to origin — as a generator
     # ------------------------------------------------------------------
     def _translated_triangles(self):
         """
@@ -269,7 +269,7 @@ class STLUtils:
         keeps all coordinates small and positive, giving a numerically stable
         answer regardless of where the model was placed in world space.
 
-        This is implemented as a generator (FIX #5) so it never materialises a
+        This is implemented as a generator so it never materialises a
         second full copy of all triangles in RAM — critical for large meshes.
         """
         ox, oy, oz = self._bbox_min
@@ -300,7 +300,7 @@ class STLUtils:
         """
         Return volume in cm³.
 
-        FIX #2: A negative raw sum means the mesh winding is reversed
+        A negative raw sum means the mesh winding is reversed
         (inside-out normals).  We return abs() but emit a clear warning so the
         user knows their mesh has a problem rather than silently getting a
         'magically corrected' number.
@@ -328,7 +328,7 @@ class STLUtils:
 
         Uses edge vectors (differences between vertices) which are already
         translation-invariant, so no origin shift is needed here.
-        Iterates self.triangles directly with no extra copy (FIX #5).
+        Iterates self.triangles directly with no extra copy.
         """
         area = 0.0
         for p1, p2, p3 in tqdm(self.triangles, desc="Calculating area  "):
